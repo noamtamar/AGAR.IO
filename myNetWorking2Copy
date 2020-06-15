@@ -1,0 +1,45 @@
+# -*- coding: utf-8 -*-
+IP = '127.0.0.1'
+PORT = 456
+import socket
+import pickle
+class Network:
+    def __init__(self):
+        self.client = socket.socket()
+        self.pos = self.connect()
+       # print (self.pos)
+
+    def connect(self):
+
+        self.client.connect(('127.0.0.1',PORT))
+
+        return (self.client.recv(2048))
+
+    def getpos(self):
+        return self.pos
+    def receive(self):
+        return self.client.recv(1024)
+
+    def send(self,data):
+        try:
+            self.client.send(data)
+            #return self.client.recv(2048).decode()
+
+        except socket.error  as e:
+            print(str(e))
+
+    def close(self):
+        try:
+            self.client.close()
+        except socket.error  as e:
+            print(str(e))
+
+def main():
+    """
+    Add Documentation here
+    """
+
+
+
+if __name__ == '__main__':
+    main()
