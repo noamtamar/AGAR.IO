@@ -1,0 +1,203 @@
+# -*- coding: utf-8 -*-
+import myNetWorking2Copy ,pygame
+import sys
+import threading
+from  threading import Thread
+import pickle
+width = 500
+height = 500
+room = {}
+pygame.init()
+win=pygame.display.set_mode((width,height))
+pygame.display.set_caption("client")
+clientNumber = 0
+class listening(Thread):
+    def __init__(self, n,  me, room):
+        self.n = n
+        self.room = room
+        self.current = me.id
+        Thread.__init__(self)
+    def run(self):
+        print (len(self.room))
+        print ("listening")
+        found = False
+        while True:
+
+            ppos = self.n.receive()
+            unpother = pickle.loads(ppos)
+            #print(ppos) # r, (x, y), color
+            #print (unpother)
+                # if(unpother[0] == "666"):
+                #     self.room[self.me.id].setradius(self.room[self.me.id].getradius()+ unpother[3])
+                # if(unpother[0] == "888"):
+                #     try:
+                #         room.remove(unpother[2])#unpother2
+                #     except:
+                #         print("couldn't remove from room")
+            otherplayer = Player(unpother[0], unpother[1],unpother[2],unpother[3], unpother[4]) #x, y, color, rad, id
+            #print(otherplayer)
+                # for i in range(0, len(self.room)):
+                #     if self.room[i].id == unpother[3]:
+                #         print ("*****")
+                #         print (unpother[3])
+                #         print (self.room[i].id)
+                #         self.room[i] = otherplayer
+                #         found = True
+                #         break
+                #
+                # if not found:
+            print ("new")
+            self.room[otherplayer.id]=otherplayer
+            #print (room)
+            RedrawWindow(win, self.room)
+
+                #self.room.pop(otherplayer.id)
+
+
+
+def checkloctation(mex, mey, otherx, othery):
+    check = 0
+    rangeme = [(mex - 5, mey), (mex - 4, mey), (mex - 3, mey), (mex - 2, mey), (mex - 1, mey), (mex, mey),
+               (mex + 1, mey), (mex + 2, mey), (mex + 3, mey), (mex + 4, mey), (mex + 5, mey), (mex, mey - 5),
+               (mex, mey - 4), (mex, mey - 3), (mex, mey - 2), (mex, mey - 1), (mex, mey), (mex, mey + 1),
+               (mex, mey + 2), (mex, mey + 3), (mex, mey + 4), (mex, mey + 5)]
+    rangeother = [(otherx - 5, othery), (otherx - 4, othery), (otherx - 3, othery), (otherx - 2, othery), (otherx - 1, othery),
+                  (otherx, othery),
+                  (otherx + 1, othery), (otherx + 2, othery), (otherx + 3, othery), (otherx + 4, othery), (otherx + 5, othery),
+                  (otherx, othery - 5),
+                  (mex, othery - 4), (mex, othery - 3), (mex, othery - 2), (mex, othery - 1), (mex, othery), (mex, othery + 1),
+                  (otherx, othery + 2), (otherx, othery + 3), (otherx, othery + 4), (otherx, othery + 5)]
+    for i in rangeme:
+        for j in rangeother:
+            if (i==j):
+                check = 1
+                return True
+
+    if(check == 0):
+        return False
+
+
+
+def iseaten(room, me, n):
+    # if len(room) >1
+    for key, value in room.items():
+        if(key != me.id):
+            print("key:", key, "me.id:", me.id)
+            print("me.getpos():", me.getpos())
+            print("value.getpos():", value.getpos())
+            mex, mey = me.getpos()
+
+            otherx, othery = value.getpos()
+
+
+            if(checkloctation(mex, mey, otherx, othery)):
+                # me.setradius(100)
+
+                if(me.getradius()> value.getradius()):
+                    me.setradius(100)
+                    #a message to the server to send the bigger player to grow
+                    # n.send(pickle.dumps(("666", "grow", value.id, me.getradius())))
+                    # break
+                    # #quit
+                print("BOOM")
+
+
+def RedrawWindow(win, room):
+
+    win.fill((255,255,255))
+    for key, value in room.items():
+        value.draw(win)
+    pygame.display.update()
+
+class Player():
+    def __init__(self,x,y,color,radius ,id):
+        self.id = id
+        self.x = x
+        self.y = y
+        self.radius = radius
+        self.color = color
+        self.rect = (x,y,radius)
+        self.val = 3
+    def draw(self,win):
+        print(self.color,(self.x, self.y), self.radius)
+        pygame.draw.circle(win, self.color,(self.x, self.y), self.radius)
+
+    def move(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            self.x -=self.val
+
+        if keys[pygame.K_RIGHT]:
+            self.x +=self.val
+
+        if keys[pygame.K_UP]:
+            self.y -=self.val
+        if keys[pygame.K_DOWN]:
+            self.y +=self.val
+        self.update()
+    def getradius(self):
+        return self.radius
+    def setradius(self, r):
+        self.radius = r
+    def getpos(self):
+        return (self.x , self.y)
+    def getx(self):
+        return self.x
+    def gety(self):
+        return self.y
+    def update(self):
+        self.circle = (self.x, self.y, self.radius)
+
+
+
+
+def main():
+    """
+    Add Documentation here
+    """
+    global  room
+    run = True
+    clock = pygame.time.Clock()
+    n = myNetWorking2Copy.Network()#making connection
+    mypos = n.getpos()
+    start = pickle.loads(mypos)
+    print ("(((((((((((((((((((((((")
+    print (start)
+    me = Player(start[0], start[1],start[2],start[3], start[4])
+    print("ZOT ANI:", me)
+    #e = Player(start[0], start[1],100,start[2],start[3])
+    room[me.id] = me
+    t = listening(n,me,room)
+    t.start()
+
+
+
+    while run:
+        clock.tick(60)
+
+
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                #pygame.quit()
+                run = False
+                # n.send(pickle.dumps(("777", "leaving" , me.id)))
+                print("I'M OUT")
+                try:
+                    room.pop(me.id)
+                except:
+                    print("couldn't remove own from room")
+                n.close()
+                sys.exit()
+
+        me.move()
+        data_to_send = pickle.dumps((me.x, me.y,me.color, me.radius, me.id))
+        #print (me.id)
+
+        n.send(data_to_send)
+        print("ME:",me)
+        iseaten(room, me, n)
+        RedrawWindow(win,room)
+
+if __name__ == '__main__':
+    main()
