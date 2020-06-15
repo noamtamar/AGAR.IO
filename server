@@ -1,0 +1,156 @@
+# -*- coding: utf-8 -*-
+import socket, threading, sys, os
+from threading import *
+import random
+import pickle
+
+IP = "127.0.0.1"
+PORT = 456
+s = socket.socket()
+try:
+    s.bind((IP, PORT))
+except socket.error as e:
+    str(e)
+
+s.listen(5)
+print("waiting for connection")
+
+Playersingamecount = 0
+
+
+
+
+def readpos(str):
+    return (int(str.split(',')[0]), int(str.split(',')[1]))
+
+
+def makepos(tup):
+    return (str(tup[0]) + ',' + str(tup[1]))
+
+
+pos = []
+pppos = []
+connections = []
+
+
+class threaded_client(Thread):
+    def __init__(self, con, player):
+        self.con = con
+        self.player = player
+        print(("*********** " + str(self.player)).encode())
+        Thread.__init__(self)
+
+    def run(self):
+        global connections, pos
+        global Playersingamecount
+        print("in game")
+        # ng to each player his startposition
+
+        # for s in sockets:
+        #      for pp in pppos:
+        #          s[0].send(pp)
+
+        #
+        # replay = "yes"
+        while True:
+            try:
+                data = (self.con.recv(2048))
+                data2 = pickle.loads(data)
+
+                # if (data2[0] == "777"):
+                #     (j, msg, data) = data2
+                #     print(data)
+                #     data = ("888", "remove" , data)
+                #     print(data)
+            except:
+                print("disconnected")
+                # Playersingamecount -= 1
+                # print(Playersingamecount)
+                # self.con.close()
+                # # del s
+                # if (Playersingamecount == 0):
+                #     print("NO PLAYERS LEFT1")
+                #     #sys.exit()
+                break
+
+            try:
+
+                p = (pickle.loads(data))
+                print(p)
+                # if(p[0] == "777"):
+                #     j, msg, data = p
+                #     print(data)
+                #     data = ("888", "remove" , data)
+                for s in connections:
+                    s.send(data)
+            except:
+                print("disconnected2")
+                # Playersingamecount -= 1
+                # print(Playersingamecount)
+                # print(connections)
+                # self.con.close()
+                #
+                # for s in connections:
+                #     if(s == self.con ):
+                #         connections.remove(s)
+                #         print(connections)
+                #
+                #
+                # if(Playersingamecount == 0):
+                #     print("NO PLAYERS LEFT2")
+                #     #sys.exit()
+                break
+
+
+        #     pos[self.player] = data
+        #
+        #     if not data:
+        #         print("disconnected")
+        #         break
+        #     else:
+        #         if self.player == 0:
+        #             replay = pos[0]
+        #         else:
+        #             replay = pos[1]
+        #     print ("receiver "+str(data))
+        #     print("sending "+str(replay))
+        #     self.con.sendall((makepos(replay).encode("utf-8")))
+        # self.con.close()
+
+
+currentPlayer = 0
+while (True):
+    conn, addr = s.accept()
+    print("connected " + str(addr))
+    connections.append((conn))
+    x = random.randint(0, 300)
+    y = random.randint(0, 300)
+    a = random.randint(0, 255)
+    b = random.randint(0, 255)
+    c = random.randint(0, 255)
+    color = (a, b, c)
+    radius = 50
+    #radius = random.randint(50, 100)
+    p = (x, y, color, radius, currentPlayer)
+    pos.append(p)
+
+    pp = pickle.dumps(p)
+    pppos.append(pp)
+    conn.send(pp)
+    connections.append(conn)
+
+    t = threaded_client(conn, currentPlayer)
+    t.start()
+    Playersingamecount +=1
+    currentPlayer += 1
+
+
+def main():
+    """
+    Add Documentation here
+    """
+    pass  # Add Your Code Here
+
+
+if __name__ == '__main__':
+    main()
